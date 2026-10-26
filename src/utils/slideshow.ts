@@ -10,7 +10,7 @@ export async function findNextPhoto(
     const index = (after + offset) % photos.length
     const url = photos[index]
     if (index === after || failed.has(url)) continue
-    if (await preloadPhoto(url, signal)) return index
+    if (await preloadPhoto(url, signal, after < 0 ? 'high' : 'low')) return index
     failed.add(url)
   }
   return null
@@ -81,11 +81,12 @@ export function waitForPaint(signal: AbortSignal): Promise<void> {
 }
 
 /** Load and decode offscreen; false means this file should be skipped. */
-export function preloadPhoto(url: string, signal: AbortSignal): Promise<boolean> {
+export function preloadPhoto(url: string, signal: AbortSignal, priority: 'high' | 'low' = 'low'): Promise<boolean> {
   return new Promise((resolve, reject) => {
     signal.throwIfAborted()
     const image = new Image()
     image.decoding = 'async'
+    image.fetchPriority = priority
 
     const cleanup = () => {
       image.onload = null

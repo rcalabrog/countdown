@@ -11,7 +11,11 @@ npm run dev
 
 Comprobaciones: `npm run lint` y `npm run build`. Para revisar la compilación localmente: `npm run preview`.
 
-Pruebas del slideshow y coherencia del itinerario (Node 24+): `node --test tests/*.test.mjs`.
+Pruebas unitarias del countdown, slideshow e itinerario (Node 24+): `npm test`.
+
+Pruebas E2E: `npm run test:e2e` compila y sirve temporalmente el build de producción en el puerto 4173. Requiere los navegadores Chromium y WebKit de Playwright instalados. Comprueba móviles de 320, 360, 375, 390 y 430 px, tablet de 768 px, escritorio de 1440 px y móvil horizontal de 844 × 390, con tiempo simulado para countdown y rotaciones.
+
+Capturas, trazas de fallos y métricas móviles se guardan en `test-results/`; el informe navegable está en `playwright-report/` (`npx playwright show-report`). Ambos directorios están ignorados por Git. La medición de carga usa Chromium con CPU ×4, latencia de 100 ms y descarga de 1,6 Mbps; es una medición sintética local, no Lighthouse ni una prueba en un teléfono físico. Las áreas seguras y las barras móviles deben comprobarse también en dispositivos reales.
 
 ## Configuración del viaje
 
@@ -29,7 +33,7 @@ El cálculo puro está en `src/utils/countdown.ts`; `src/hooks/useCountdown.ts` 
 
 ## Próximas fases
 
-- Panel de configuración.
+- La fase de controles y personalización se ha cancelado; no se añadirán controles a la interfaz.
 - Configuración y despliegue en GitHub Pages (pendientes; esta fase es exclusivamente local).
 
 ## Atmósfera

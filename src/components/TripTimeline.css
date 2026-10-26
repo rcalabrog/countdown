@@ -101,15 +101,20 @@
 @keyframes trip-dim { from { opacity: 0; } to { opacity: 1; } }
 
 @media (max-width: 600px) {
-  .trip-dialog { width: 100%; max-height: calc(100svh - 24px); margin: auto 0 0; border-bottom: 0; border-radius: 18px 18px 0 0; }
-  .trip-dialog__header { padding: 21px 20px 18px; }
+  .trip-trigger { font-size: 12px; }
+  .trip-dialog { width: 100%; max-height: calc(100svh - max(24px, env(safe-area-inset-top, 0px))); margin: auto 0 0; border-bottom: 0; border-radius: 18px 18px 0 0; }
+  .trip-dialog__header { padding: 21px max(20px, env(safe-area-inset-right, 0px)) 18px max(20px, env(safe-area-inset-left, 0px)); }
   .trip-dialog__header h2 { font-size: 25px; }
-  .trip-dialog__content { padding: 22px 20px calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .trip-dialog__content { padding: 22px max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); }
   .trip-flight dl { grid-template-columns: 1fr; gap: 13px; }
   .trip-stages { padding-left: 36px; }
   .trip-stage__number { left: -36px; }
   .trip-stage__card { padding: 16px; }
   .trip-stage__header h3 { font-size: 21px; }
+}
+
+@media (pointer: coarse) {
+  .trip-trigger { min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

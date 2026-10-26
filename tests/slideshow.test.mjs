@@ -154,3 +154,11 @@ test('empty, single, broken and looping photo sequences', async () => {
   assert.equal(await findNextPhoto(['first', 'last'], 1, failed, signal), 0)
   assert.equal(await findNextPhoto(['broken'], -1, new Set(), signal), null)
 })
+
+test('the first usable photo has high fetch priority, subsequent preloads have low priority', async () => {
+  const signal = new AbortController().signal
+  await findNextPhoto(['first', 'second'], -1, new Set(), signal)
+  assert.equal(images.at(-1).fetchPriority, 'high')
+  await findNextPhoto(['first', 'second'], 0, new Set(), signal)
+  assert.equal(images.at(-1).fetchPriority, 'low')
+})

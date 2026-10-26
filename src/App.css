@@ -7,6 +7,9 @@
   flex-direction: column;
   overflow: hidden;
   padding: 0 clamp(24px, 5vw, 80px);
+  padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px);
+  padding-left: max(clamp(24px, 5vw, 80px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(24px, 5vw, 80px), env(safe-area-inset-right, 0px));
   background: var(--color-background);
 }
 
@@ -328,7 +331,7 @@
   .countdown__units { gap: 7px; }
   .time-block { padding: 21px 4px 18px; }
   .time-block__value { font-size: clamp(30px, 8.6vw, 51px); }
-  .time-block__label { margin-top: 11px; font-size: 9px; letter-spacing: 0.07em; }
+  .time-block__label { margin-top: 11px; font-size: 10px; letter-spacing: 0.07em; }
   .departure { column-gap: 7px; row-gap: 1px; margin-top: 22px; font-size: 11px; }
   .departure__zone { flex-basis: 100%; }
   .departure__zone::before { content: none; }
@@ -339,6 +342,16 @@
   .footer p { max-width: 180px; line-height: 1.6; }
   .footer__signature { gap: 9px; }
   .landscape__sun { top: 17%; }
+}
+
+/* Short phones need less empty space, while retaining all four time units. */
+@media (max-width: 600px) and (max-height: 740px) {
+  .masthead { min-height: 64px; }
+  .hero { padding-block: clamp(20px, 4svh, 30px); }
+  .hero h1 { margin-block: 18px 16px; }
+  .countdown { margin-top: 24px; }
+  .route { margin-top: 26px; }
+  .footer { min-height: 64px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
