@@ -1,5 +1,6 @@
 ﻿import { Countdown } from './components/Countdown'
 import { trip } from './config/trip'
+import { BackgroundSlideshow } from './components/BackgroundSlideshow'
 import './App.css'
 
 const departureDate = new Intl.DateTimeFormat('es-ES', {
@@ -23,6 +24,7 @@ function App() {
         <div className="landscape__sun" />
         <div className="landscape__ridge landscape__ridge--distant" />
         <div className="landscape__ridge landscape__ridge--near" />
+        <BackgroundSlideshow />
       </div>
 
       <header className="masthead">
