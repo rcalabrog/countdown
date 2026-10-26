@@ -98,6 +98,10 @@
   letter-spacing: 0.04em;
 }
 
+.japanese-caption {
+  font-family: 'Yu Gothic', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, 'Noto Sans CJK JP', sans-serif;
+}
+
 .hero {
   position: relative;
   display: flex;

@@ -13,16 +13,17 @@
   min-height: 40px;
   gap: 9px;
   padding: 7px 13px;
-  border: 1px solid transparent;
+  border: 1px solid rgb(245 238 228 / 10%);
   border-radius: 5px;
   color: var(--color-muted);
-  background: transparent;
+  background: rgb(245 238 228 / 3%);
   font-size: 11px;
   letter-spacing: 0.04em;
 }
 
 .trip-trigger svg { width: 16px; height: 16px; color: var(--color-accent); }
 .trip-trigger:hover { color: var(--color-text); border-color: var(--color-border); background: rgb(245 238 228 / 4%); }
+.trip-trigger:focus-visible { background: rgb(245 238 228 / 5%); }
 .trip-trigger:focus-visible, .trip-dialog__close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 
 /* Native top layer keeps the dialog above photos and decorative effects. */

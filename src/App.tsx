@@ -41,7 +41,7 @@ function App() {
           <span className="sun-mark" aria-hidden="true" />
           THE COUNTDOWN
         </span>
-        <span className="masthead__note">Un viaje para recordar</span>
+        <span className="masthead__note japanese-caption" lang="ja">カウントダウン</span>
       </header>
 
       <main className="hero">
@@ -77,7 +77,7 @@ function App() {
       </main>
 
       <footer className="footer">
-        <p>Lejos de la rutina. Más cerca de Japón.</p>
+        <p className="japanese-caption" lang="ja">お久しぶりです</p>
         <span className="footer__signature"><span lang="ja">日本</span> <span aria-hidden="true">/</span> {trip.year}</span>
       </footer>
     </div>
