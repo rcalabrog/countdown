@@ -107,7 +107,7 @@
   align-self: center;
   padding: clamp(32px, 5vh, 64px) 0;
   text-align: center;
-  animation: arrive 900ms ease-out both;
+  animation: arrive var(--entrance-duration, 900ms) ease-out both;
 }
 
 .japanese-note {

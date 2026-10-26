@@ -29,5 +29,9 @@ El cálculo puro está en `src/utils/countdown.ts`; `src/hooks/useCountdown.ts` 
 
 ## Próximas fases
 
-- Animaciones de sakura, timeline del itinerario y panel de configuración.
+- Timeline del itinerario y panel de configuración.
 - Configuración y despliegue en GitHub Pages (pendientes; esta fase es exclusivamente local).
+
+## Atmósfera
+
+En `src/config/effects.ts` se ajustan los pétalos (8 en escritorio y 4 en móvil), sus duraciones de caída (14–28 s) y opacidad, la intensidad y el ciclo de la luz ambiental y la duración de entrada del contenido (900 ms). Los efectos usan CSS, se pausan en pestañas ocultas y se desactivan con movimiento reducido. No modifican las fotografías ni la lógica del countdown o del slideshow.

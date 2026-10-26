@@ -1,5 +1,8 @@
 ﻿import { Countdown } from './components/Countdown'
 import { trip } from './config/trip'
+import type { CSSProperties } from 'react'
+import { effects } from './config/effects'
+import { AmbientEffects } from './components/AmbientEffects'
 import { BackgroundSlideshow } from './components/BackgroundSlideshow'
 import './App.css'
 
@@ -10,6 +13,10 @@ const departureDate = new Intl.DateTimeFormat('es-ES', {
   timeZone: trip.timeZone,
 }).format(new Date(trip.departure))
 
+const entranceStyle = {
+  '--entrance-duration': `${effects.entranceDurationMs}ms`,
+} as CSSProperties
+
 const departureTime = new Intl.DateTimeFormat('es-ES', {
   hour: '2-digit',
   minute: '2-digit',
@@ -19,13 +26,14 @@ const departureTime = new Intl.DateTimeFormat('es-ES', {
 
 function App() {
   return (
-    <div className="journey">
+    <div className="journey" style={entranceStyle}>
       <div className="landscape" aria-hidden="true">
         <div className="landscape__sun" />
         <div className="landscape__ridge landscape__ridge--distant" />
         <div className="landscape__ridge landscape__ridge--near" />
         <BackgroundSlideshow />
       </div>
+      <AmbientEffects />
 
       <header className="masthead">
         <span className="wordmark">

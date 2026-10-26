@@ -1,0 +1,84 @@
+.ambient-effects {
+  position: fixed;
+  /* Mounted after the backdrop at the same level, below every UI element. */
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  contain: strict;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ambient-light, .sakura-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ambient-light {
+  background: radial-gradient(ellipse at 22% 28%, #efd1a5, transparent 65%);
+  animation: ambient-breathe var(--ambient-light-duration) ease-in-out infinite;
+}
+
+.sakura-particle {
+  position: absolute;
+  top: -32px;
+  left: var(--petal-left);
+  display: var(--desktop-display);
+  width: var(--petal-size);
+  height: var(--petal-size);
+  animation: sakura-fall var(--fall-duration) var(--fall-delay) linear infinite;
+}
+
+.sakura-particle__sway {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: sakura-sway var(--sway-duration) var(--sway-delay) ease-in-out infinite;
+}
+
+.sakura-particle__petal {
+  display: block;
+  width: 100%;
+  height: 72%;
+  border-radius: 85% 15% 70% 30% / 75% 25% 75% 25%;
+  background: linear-gradient(145deg, #fff4f5, #edc1cc);
+  animation: sakura-turn var(--turn-duration) var(--turn-delay) ease-in-out infinite alternate;
+}
+
+.ambient-effects[data-paused='true'] .ambient-light,
+.ambient-effects[data-paused='true'] .sakura-particle,
+.ambient-effects[data-paused='true'] .sakura-particle__sway,
+.ambient-effects[data-paused='true'] .sakura-particle__petal {
+  animation-play-state: paused;
+}
+
+@keyframes sakura-fall {
+  0% { opacity: 0; transform: translate3d(0, 0, 0); }
+  8%, 90% { opacity: var(--petal-alpha); }
+  100% { opacity: 0; transform: translate3d(var(--drift), calc(100vh + 64px), 0); }
+}
+
+@keyframes sakura-sway {
+  0%, 100% { transform: translateX(calc(-1 * var(--sway-distance))); }
+  45% { transform: translateX(var(--sway-distance)); }
+}
+
+@keyframes sakura-turn {
+  from { transform: rotate(var(--turn-start)); }
+  to { transform: rotate(calc(var(--turn-start) + var(--turn-distance))); }
+}
+
+@keyframes ambient-breathe {
+  0%, 100% { opacity: calc(var(--ambient-light-opacity) * 0.4); }
+  50% { opacity: var(--ambient-light-opacity); }
+}
+
+@media (max-width: 600px) {
+  .sakura-particle { display: var(--mobile-display); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-effects { display: none; }
+  .ambient-light, .sakura-particle, .sakura-particle__sway, .sakura-particle__petal { animation: none; }
+}
