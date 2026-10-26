@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 import { effects } from './config/effects'
 import { AmbientEffects } from './components/AmbientEffects'
 import { BackgroundSlideshow } from './components/BackgroundSlideshow'
+import { TripTimeline } from './components/TripTimeline'
 import './App.css'
 
 const departureDate = new Intl.DateTimeFormat('es-ES', {
@@ -72,6 +73,7 @@ function App() {
           </p>
           <span className="route__line" aria-hidden="true" />
         </div>
+        <TripTimeline />
       </main>
 
       <footer className="footer">

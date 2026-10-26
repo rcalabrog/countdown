@@ -11,7 +11,7 @@ npm run dev
 
 Comprobaciones: `npm run lint` y `npm run build`. Para revisar la compilación localmente: `npm run preview`.
 
-Pruebas de carga, pausa y cancelación del slideshow (Node 24+): `node --test tests/slideshow.test.mjs`.
+Pruebas del slideshow y coherencia del itinerario (Node 24+): `node --test tests/*.test.mjs`.
 
 ## Configuración del viaje
 
@@ -29,9 +29,13 @@ El cálculo puro está en `src/utils/countdown.ts`; `src/hooks/useCountdown.ts` 
 
 ## Próximas fases
 
-- Timeline del itinerario y panel de configuración.
+- Panel de configuración.
 - Configuración y despliegue en GitHub Pages (pendientes; esta fase es exclusivamente local).
 
 ## Atmósfera
 
 En `src/config/effects.ts` se ajustan los pétalos (8 en escritorio y 4 en móvil), sus duraciones de caída (14–28 s) y opacidad, la intensidad y el ciclo de la luz ambiental y la duración de entrada del contenido (900 ms). Los efectos usan CSS, se pausan en pestañas ocultas y se desactivan con movimiento reducido. No modifican las fotografías ni la lógica del countdown o del slideshow.
+
+## Nuestro viaje
+
+El botón «Explorar nuestro viaje» abre el itinerario en un diálogo accesible, con cierre mediante Escape y desplazamiento interno. Las estancias, excursiones y vuelos se editan en `src/config/itinerary.ts`; la salida reutiliza la fecha del countdown. Las horas se muestran en su zona local y el resumen se calcula a partir de las estancias.
