@@ -9,7 +9,7 @@ const sizes = [[320, 568], [360, 800], [375, 667], [390, 844], [430, 932], [768,
 for (const [width, height] of sizes) {
   test(`layout ${width}x${height}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height })
-    await page.goto('/')
+    await page.goto('./')
     await firstPhoto(page)
     await expect(page.getByRole('heading', { name: 'JAPÓN 2027' })).toBeInViewport()
     await expect(page.getByText('カウントダウン', { exact: true })).toHaveAttribute('lang', 'ja')
@@ -56,7 +56,7 @@ for (const [width, height] of sizes) {
 test('itinerary touch, keyboard, internal scroll and restoration', async ({ page }) => {
   // A shorter visual viewport exercises real background scroll restoration.
   await page.setViewportSize({ width: 320, height: 480 })
-  await page.goto('/')
+  await page.goto('./')
   const trigger = page.getByRole('button', { name: 'Explorar nuestro viaje' })
   await expect(page.locator('.hero')).toHaveCSS('opacity', '1')
   await page.evaluate(() => window.scrollTo(0, 100))
@@ -100,7 +100,7 @@ test('slideshow preloads only the next photo and rotates with simulated time', a
   await page.clock.pauseAt(referenceTime)
   const requests = new Set<string>()
   page.on('request', (request) => { if (/\.(jpe?g|png|webp|avif)(\?|$)/i.test(request.url())) requests.add(request.url()) })
-  await page.goto('/')
+  await page.goto('./')
   await expect.poll(async () => {
     await page.clock.runFor(50)
     return page.locator('.background-slideshow__image').count()
@@ -129,7 +129,7 @@ test('slideshow preloads only the next photo and rotates with simulated time', a
 test('broken photographs leave the CSS fallback and countdown usable', async ({ page }) => {
   let failed = 0
   await page.route(/\.(jpe?g|png|webp|avif)(\?|$)/i, (route) => { failed += 1; return route.abort() })
-  await page.goto('/')
+  await page.goto('./')
   await expect.poll(() => failed, { timeout: 10_000 }).toBe(galleryFiles.length)
   await expect(page.locator('.background-slideshow__image')).toHaveCount(0)
   await expect(page.locator('.countdown')).toBeVisible()
@@ -151,7 +151,7 @@ test('shuffle survives countdown renders and skips broken files across two-photo
   const allowed = galleryFiles.slice(0, 2).map((name) => `${name.slice(0, name.lastIndexOf('.'))}-`)
   await page.route(/\.(jpe?g|png|webp|avif)(\?|$)/i, (route) =>
     allowed.some((name) => route.request().url().includes(name)) ? route.continue() : route.abort())
-  await page.goto('/')
+  await page.goto('./')
   await expect.poll(async () => {
     await page.clock.runFor(50)
     return page.locator('.background-slideshow__image').count()
@@ -188,7 +188,7 @@ test('visibility events pause decorative effects and rotation without stopping t
   await trackPhotoDecodes(page)
   await page.clock.install({ time: referenceTime })
   await page.clock.pauseAt(referenceTime)
-  await page.goto('/')
+  await page.goto('./')
   await expect.poll(async () => {
     await page.clock.runFor(50)
     return page.locator('.background-slideshow__image').count()
@@ -220,7 +220,7 @@ test('visibility events pause decorative effects and rotation without stopping t
 
 test('reduced motion disables decorative movement, entry and crossfades', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('./')
   await firstPhoto(page)
   await expect(page.locator('.ambient-effects')).toHaveCSS('display', 'none')
   for (const selector of ['.hero', '.ambient-light', '.sakura-particle', '.sakura-particle__sway', '.sakura-particle__petal']) {
@@ -244,7 +244,7 @@ test('countdown completes at the exact Madrid instant and stays at zero', async 
   const before = new Date(Date.parse(trip.departure) - 2_000)
   await page.clock.install({ time: before })
   await page.clock.pauseAt(before)
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.locator('.time-block--seconds dd')).toHaveText('02')
   await expect(page.getByRole('status')).toBeEmpty()
   await page.clock.runFor(1_000)

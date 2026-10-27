@@ -31,7 +31,7 @@ test('record mobile load metrics with CPU and network emulation', async ({ page,
       }
     }).observe({ type: 'layout-shift', buffered: true })
   })
-  await page.goto('/')
+  await page.goto('./')
   await firstPhoto(page, 30_000)
   await expect(page.locator('.hero')).toHaveCSS('opacity', '1')
   await expect.poll(() => page.evaluate(() => (window as unknown as { auditMetrics: Metrics }).auditMetrics.lcp)).not.toBeNull()

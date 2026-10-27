@@ -1,8 +1,13 @@
 import { test, expect, firstPhoto, noHorizontalOverflow, capture } from './helpers'
 
 test('desktop composition and itinerary remain usable', async ({ page }, testInfo) => {
-  await page.goto('/')
-  await firstPhoto(page)
+  await page.goto('./')
+  const photo = await firstPhoto(page)
+  await expect(page).toHaveURL('http://127.0.0.1:4173/countdown/')
+  await expect(photo).toHaveAttribute('src', /^\/countdown\/assets\//)
+  await expect(page.locator('script[type="module"]')).toHaveAttribute('src', /^\/countdown\/assets\//)
+  await expect(page.locator('link[rel="stylesheet"]')).toHaveAttribute('href', /^\/countdown\/assets\//)
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/countdown/favicon.svg')
   await expect(page.locator('.hero')).toHaveCSS('opacity', '1')
   await noHorizontalOverflow(page)
   await expect(page.getByRole('heading', { name: 'JAPÓN 2027' })).toBeInViewport()
