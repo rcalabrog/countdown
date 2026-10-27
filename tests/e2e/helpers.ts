@@ -1,4 +1,9 @@
 import { test as base, expect, type Page, type TestInfo } from '@playwright/test'
+import { readdirSync } from 'node:fs'
+
+export const galleryFiles = readdirSync(new URL('../../src/assets/photos/', import.meta.url))
+  .filter((name) => /\.(jpe?g|png|webp|avif)$/i.test(name))
+  .sort((left, right) => left.localeCompare(right, 'en', { numeric: true }))
 
 // Keep all E2E cases independent of the real date, including after April 2027.
 export const referenceTime = new Date('2026-10-26T12:00:00+01:00')
@@ -16,6 +21,22 @@ export const test = base.extend<{ runtimeErrors: string[]; freezeDate: boolean }
   }, { auto: true }],
 })
 export { expect }
+
+/** Observe real decode completion before advancing a simulated clock. */
+export async function trackPhotoDecodes(page: Page) {
+  await page.addInitScript(() => {
+    const decoded: string[] = []
+    ;(window as unknown as { decodedPhotos: string[] }).decodedPhotos = decoded
+    const decode = HTMLImageElement.prototype.decode
+    HTMLImageElement.prototype.decode = function () {
+      return decode.call(this).then(() => { decoded.push(this.currentSrc || this.src) })
+    }
+  })
+}
+
+export async function waitForDecodedPhotos(page: Page, count: number) {
+  await expect.poll(() => page.evaluate(() => (window as unknown as { decodedPhotos: string[] }).decodedPhotos.length), { timeout: 10_000 }).toBeGreaterThanOrEqual(count)
+}
 
 export async function capture(page: Page, testInfo: TestInfo, name: string) {
   const path = testInfo.outputPath(`${name}.png`)
@@ -35,10 +56,10 @@ export async function capture(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path, contentType: 'image/png' })
 }
 
-export async function firstPhoto(page: Page) {
+export async function firstPhoto(page: Page, timeout = 10_000) {
   const image = page.locator('.background-slideshow__image').first()
-  await expect(image).toBeVisible()
-  await expect.poll(() => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true)
+  await expect(image).toBeVisible({ timeout })
+  await expect.poll(() => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0), { timeout }).toBe(true)
   return image
 }
 

@@ -1,4 +1,4 @@
-import { test, expect, firstPhoto, noHorizontalOverflow, referenceTime, capture } from './helpers'
+import { test, expect, firstPhoto, noHorizontalOverflow, referenceTime, capture, galleryFiles, trackPhotoDecodes, waitForDecodedPhotos } from './helpers'
 import { trip } from '../../src/config/trip'
 // Behavioural contract: preserve the existing 15 s rotation / 1.5 s fade.
 const SLIDE_DURATION_MS = 15_000
@@ -95,6 +95,7 @@ test('itinerary touch, keyboard, internal scroll and restoration', async ({ page
 })
 
 test('slideshow preloads only the next photo and rotates with simulated time', async ({ page }) => {
+  await trackPhotoDecodes(page)
   await page.clock.install({ time: referenceTime })
   await page.clock.pauseAt(referenceTime)
   const requests = new Set<string>()
@@ -107,8 +108,12 @@ test('slideshow preloads only the next photo and rotates with simulated time', a
   const image = await firstPhoto(page)
   const initial = await image.getAttribute('src')
   await expect.poll(() => requests.size).toBe(2)
+  await waitForDecodedPhotos(page, 2)
   await page.clock.runFor(SLIDE_DURATION_MS + 100)
-  await expect(page.locator('.background-slideshow__image--visible')).toHaveCount(1)
+  await expect.poll(async () => {
+    await page.clock.runFor(50)
+    return page.locator('.background-slideshow__image--visible').count()
+  }).toBe(1)
   await expect(page.locator('.background-slideshow__image')).toHaveCount(2)
   await page.clock.runFor(TRANSITION_DURATION_MS + 100)
   await expect(page.locator('.background-slideshow__image')).toHaveCount(1)
@@ -125,7 +130,7 @@ test('broken photographs leave the CSS fallback and countdown usable', async ({ 
   let failed = 0
   await page.route(/\.(jpe?g|png|webp|avif)(\?|$)/i, (route) => { failed += 1; return route.abort() })
   await page.goto('/')
-  await expect.poll(() => failed).toBeGreaterThanOrEqual(6)
+  await expect.poll(() => failed, { timeout: 10_000 }).toBe(galleryFiles.length)
   await expect(page.locator('.background-slideshow__image')).toHaveCount(0)
   await expect(page.locator('.countdown')).toBeVisible()
   await expect(page.locator('.landscape')).not.toHaveCSS('background-image', 'none')
@@ -133,7 +138,54 @@ test('broken photographs leave the CSS fallback and countdown usable', async ({ 
   await expect(page.getByRole('dialog')).toBeVisible()
 })
 
+test('shuffle survives countdown renders and skips broken files across two-photo cycles', async ({ page }) => {
+  await page.clock.install({ time: referenceTime })
+  await page.clock.pauseAt(referenceTime)
+  await page.addInitScript(() => {
+    let calls = 0
+    Math.random = () => { calls += 1; return 0.999999 }
+    Object.defineProperty(window, 'galleryRandomCalls', { get: () => calls })
+  })
+  // Keep the actual first two assets; all other requests fail without downloading
+  // the full gallery. This exercises recovery and boundary reshuffling in-browser.
+  const allowed = galleryFiles.slice(0, 2).map((name) => `${name.slice(0, name.lastIndexOf('.'))}-`)
+  await page.route(/\.(jpe?g|png|webp|avif)(\?|$)/i, (route) =>
+    allowed.some((name) => route.request().url().includes(name)) ? route.continue() : route.abort())
+  await page.goto('/')
+  await expect.poll(async () => {
+    await page.clock.runFor(50)
+    return page.locator('.background-slideshow__image').count()
+  }, { timeout: 10_000 }).toBe(1)
+  const image = await firstPhoto(page)
+  const shown = [await image.getAttribute('src')]
+  const randomCalls = () => page.evaluate(() => (window as unknown as { galleryRandomCalls: number }).galleryRandomCalls)
+  const before = await randomCalls()
+  await page.clock.runFor(3_000)
+  expect(await randomCalls()).toBe(before)
+  await expect(image).toHaveAttribute('src', shown[0]!)
+
+  for (let transition = 0; transition < 4; transition += 1) {
+    const hold = transition === 0 ? SLIDE_DURATION_MS - 3_000 : SLIDE_DURATION_MS - TRANSITION_DURATION_MS
+    await page.clock.runFor(hold + 100)
+    await expect.poll(async () => {
+      await page.clock.runFor(50)
+      return page.locator('.background-slideshow__image--visible').count()
+    }, { timeout: 10_000 }).toBe(1)
+    await expect(page.locator('.background-slideshow__image')).toHaveCount(2)
+    await expect(page.locator('.background-slideshow__image:not(.background-slideshow__image--incoming)')).toHaveCSS('opacity', '1')
+    await page.clock.runFor(TRANSITION_DURATION_MS + 100)
+    await expect(page.locator('.background-slideshow__image')).toHaveCount(1)
+    const next = await page.locator('.background-slideshow__image').getAttribute('src')
+    expect(next).not.toBe(shown.at(-1))
+    shown.push(next)
+  }
+  expect(shown[0]).toBe(shown[2])
+  expect(shown[1]).toBe(shown[3])
+  expect(shown[0]).toBe(shown[4])
+})
+
 test('visibility events pause decorative effects and rotation without stopping the countdown', async ({ page }) => {
+  await trackPhotoDecodes(page)
   await page.clock.install({ time: referenceTime })
   await page.clock.pauseAt(referenceTime)
   await page.goto('/')
@@ -143,6 +195,7 @@ test('visibility events pause decorative effects and rotation without stopping t
   }).toBe(1)
   const initial = await page.locator('.background-slideshow__image').getAttribute('src')
   const initialMinutes = await page.locator('.time-block--minutes dd').textContent()
+  await waitForDecodedPhotos(page, 2)
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
     document.dispatchEvent(new Event('visibilitychange'))

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, mock, test } from 'node:test'
-import { findNextPhoto, preloadPhoto, waitForPaint, waitForVisibleDuration } from '../src/utils/slideshow.ts'
+import { findNextPhoto, preloadPhoto, waitForPaint, waitForVisibleDuration, PHOTO_LOAD_TIMEOUT_MS } from '../src/utils/slideshow.ts'
+import { createPhotoSequence } from '../src/utils/photoSequence.ts'
+
+// Near 1 leaves Fisher–Yates in input order for deterministic loading checks.
+const sequence = (photos) => createPhotoSequence(photos, () => 0.999999)
 
 let now, tasks, listeners, images, originalGlobals
 
@@ -143,22 +147,72 @@ test('preloading waits for decode, skips errors and releases aborted images', as
 test('empty, single, broken and looping photo sequences', async () => {
   const signal = new AbortController().signal
   const failed = new Set()
-  assert.equal(await findNextPhoto([], -1, failed, signal), null)
-  assert.equal(await findNextPhoto(['only'], -1, failed, signal), 0)
-  assert.equal(await findNextPhoto(['only'], 0, failed, signal), null)
-  assert.equal(await findNextPhoto(['broken', 'undecodable', 'valid'], -1, failed, signal), 2)
+  assert.equal(await findNextPhoto(sequence([]), null, failed, signal), null)
+  const single = sequence(['only'])
+  assert.equal(await findNextPhoto(single, null, failed, signal), 'only')
+  assert.equal(await findNextPhoto(single, 'only', failed, signal), null)
+  const mixed = sequence(['broken', 'undecodable', 'valid'])
+  assert.equal(await findNextPhoto(mixed, null, failed, signal), 'valid')
   assert.deepEqual([...failed], ['broken', 'undecodable'])
   const loadCount = images.length
-  assert.equal(await findNextPhoto(['broken', 'undecodable', 'valid'], 2, failed, signal), null)
+  assert.equal(await findNextPhoto(mixed, 'valid', failed, signal), null)
   assert.equal(images.length, loadCount)
-  assert.equal(await findNextPhoto(['first', 'last'], 1, failed, signal), 0)
-  assert.equal(await findNextPhoto(['broken'], -1, new Set(), signal), null)
+  assert.equal(await findNextPhoto(sequence(['first', 'last']), 'last', failed, signal), 'first')
+  assert.equal(await findNextPhoto(sequence(['broken']), null, new Set(), signal), null)
 })
 
 test('the first usable photo has high fetch priority, subsequent preloads have low priority', async () => {
   const signal = new AbortController().signal
-  await findNextPhoto(['first', 'second'], -1, new Set(), signal)
+  const order = sequence(['first', 'second'])
+  await findNextPhoto(order, null, new Set(), signal)
   assert.equal(images.at(-1).fetchPriority, 'high')
-  await findNextPhoto(['first', 'second'], 0, new Set(), signal)
+  await findNextPhoto(order, 'first', new Set(), signal)
   assert.equal(images.at(-1).fetchPriority, 'low')
+})
+
+test('a stalled load is released after the timeout and a valid photo can follow', async () => {
+  const signal = new AbortController().signal
+  const failed = new Set()
+  const order = sequence(['pending', 'valid'])
+  const loading = findNextPhoto(order, null, failed, signal)
+  advance(PHOTO_LOAD_TIMEOUT_MS - 1)
+  assert.equal(images.length, 1)
+  advance(1)
+  assert.equal(await loading, 'valid')
+  assert.ok(failed.has('pending'))
+  assert.equal(images[0].removed, true)
+  assert.equal(images[0].onload, null)
+  assert.equal(tasks.size, 0)
+})
+
+test('a 100-photo collection loads only the requested current and next files', async () => {
+  const urls = Array.from({ length: 100 }, (_, index) => `/pages/assets/photo-${index}.webp`)
+  const order = sequence(urls)
+  const failed = new Set()
+  const signal = new AbortController().signal
+  let current = await findNextPhoto(order, null, failed, signal)
+  assert.equal(images.length, 1)
+  const first = current
+  const shown = [current]
+  for (let index = 1; index < urls.length; index += 1) {
+    current = await findNextPhoto(order, current, failed, signal)
+    shown.push(current)
+    assert.equal(images.length, index + 1)
+    assert.equal(tasks.size, 0)
+  }
+  assert.deepEqual(shown, urls)
+  assert.equal(await findNextPhoto(order, current, failed, signal), first)
+  assert.equal(failed.size, 0)
+})
+
+test('broken candidates at a cycle boundary do not cause a consecutive repeat', async () => {
+  const order = sequence(['first', 'last', 'broken'])
+  const signal = new AbortController().signal
+  const failed = new Set()
+  assert.equal(await findNextPhoto(order, null, failed, signal), 'first')
+  assert.equal(await findNextPhoto(order, 'first', failed, signal), 'last')
+  assert.equal(await findNextPhoto(order, 'last', failed, signal), 'first')
+  const requests = images.length
+  assert.equal(await findNextPhoto(order, 'first', failed, signal), 'last')
+  assert.equal(images.length, requests + 1)
 })

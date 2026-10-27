@@ -9,6 +9,7 @@ test.use({ freezeDate: false })
 
 // Run after the functional projects, without competing browser workers.
 test('record mobile load metrics with CPU and network emulation', async ({ page, context, browser }, testInfo) => {
+  test.setTimeout(60_000)
   await page.setViewportSize({ width: 390, height: 844 })
   const session = await context.newCDPSession(page)
   await session.send('Network.enable')
@@ -31,7 +32,7 @@ test('record mobile load metrics with CPU and network emulation', async ({ page,
     }).observe({ type: 'layout-shift', buffered: true })
   })
   await page.goto('/')
-  await firstPhoto(page)
+  await firstPhoto(page, 30_000)
   await expect(page.locator('.hero')).toHaveCSS('opacity', '1')
   await expect.poll(() => page.evaluate(() => (window as unknown as { auditMetrics: Metrics }).auditMetrics.lcp)).not.toBeNull()
   // Flush paint/observer delivery, then the interaction finalizes the LCP window.

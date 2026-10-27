@@ -1,19 +1,21 @@
-/** Search once around the sequence, skipping the current and broken files. */
+import type { PhotoSequence } from './photoSequence'
+
+export const PHOTO_LOAD_TIMEOUT_MS = 45_000
+
+/** Consume the active cycle until a decoded photo is ready, or none remain. */
 export async function findNextPhoto(
-  photos: readonly string[],
-  after: number,
+  sequence: PhotoSequence,
+  current: string | null,
   failed: Set<string>,
   signal: AbortSignal,
-): Promise<number | null> {
-  for (let offset = 1; offset <= photos.length; offset += 1) {
+): Promise<string | null> {
+  while (true) {
     signal.throwIfAborted()
-    const index = (after + offset) % photos.length
-    const url = photos[index]
-    if (index === after || failed.has(url)) continue
-    if (await preloadPhoto(url, signal, after < 0 ? 'high' : 'low')) return index
+    const url = sequence.next(current, failed)
+    if (url === null) return null
+    if (await preloadPhoto(url, signal, current === null ? 'high' : 'low')) return url
     failed.add(url)
   }
-  return null
 }
 
 /** Count only foreground time, preserving the remaining delay while hidden. */
@@ -87,19 +89,26 @@ export function preloadPhoto(url: string, signal: AbortSignal, priority: 'high' 
     const image = new Image()
     image.decoding = 'async'
     image.fetchPriority = priority
+    let settled = false
 
     const cleanup = () => {
+      window.clearTimeout(timeout)
       image.onload = null
       image.onerror = null
       signal.removeEventListener('abort', onAbort)
     }
 
     const finish = (loaded: boolean) => {
+      if (settled) return
+      settled = true
       cleanup()
+      if (!loaded) image.removeAttribute('src')
       resolve(loaded)
     }
 
     const onAbort = () => {
+      if (settled) return
+      settled = true
       cleanup()
       image.removeAttribute('src')
       reject(signal.reason)
@@ -113,6 +122,7 @@ export function preloadPhoto(url: string, signal: AbortSignal, priority: 'high' 
       )
     }
     image.onerror = () => finish(false)
+    const timeout = window.setTimeout(() => finish(false), PHOTO_LOAD_TIMEOUT_MS)
     signal.addEventListener('abort', onAbort, { once: true })
     image.src = url
   })

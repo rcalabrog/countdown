@@ -26,9 +26,12 @@ El cálculo puro está en `src/utils/countdown.ts`; `src/hooks/useCountdown.ts` 
 ## Fotografías de fondo
 
 - Colocar las imágenes directamente en `src/assets/photos/`. Formatos: JPG, JPEG, PNG, WebP y AVIF; extensiones en minúsculas o mayúsculas.
-- Para añadir o eliminar fotografías, copiar o borrar archivos de esa carpeta. Vite las detecta automáticamente y las ordena por nombre (orden natural: `2` antes que `10`). No es necesario modificar código.
+- Para añadir o eliminar fotografías, copiar o borrar archivos de esa carpeta. Vite las detecta automáticamente; los nombres solo ordenan el manifiesto de URLs, no la reproducción. No es necesario modificar código.
+- La primera foto y cada ciclo se mezclan con Fisher–Yates. Todas las fotos válidas aparecen una vez por ciclo; el siguiente ciclo evita comenzar por la última mostrada. El orden se mantiene en memoria dentro del efecto, sin localStorage ni cálculos en los renders del countdown.
 - Configurar `SLIDE_DURATION_MS` (15 segundos) y `TRANSITION_DURATION_MS` (1,5 segundos) en `src/config/slideshow.ts`.
 - Se precarga la siguiente imagen; las que no cargan se omiten. Sin fotos válidas se conserva el paisaje CSS; con una sola foto válida no hay rotación. La rotación se pausa en pestañas ocultas y el movimiento reducido desactiva el fundido.
+- Se montan como máximo dos imágenes y solo se precarga una próxima foto. No hay caché propia: el navegador administra los recursos y su memoria decodificada. Una carga o decodificación bloqueada se abandona a los 45 s (`PHOTO_LOAD_TIMEOUT_MS` en `src/utils/slideshow.ts`); los archivos fallidos se excluyen durante esa carga de página.
+- `npm run audit:photos` informa del número, peso total y medio, formatos, cinco archivos más pesados y todos los que superan 2 MB decimales. Solo lee metadatos; no convierte ni modifica las fotos. Con galerías grandes, revisar manualmente los archivos pesados y su resolución.
 - **Para publicar fotografías nuevas o eliminadas hay que volver a generar y desplegar la web.** Las URLs se generan mediante Vite y respetan su opción `base`. Para GitHub Pages en una subruta, compilar con `npm run build -- --base=/nombre-del-repositorio/` o configurar ese valor en `vite.config.ts` en la fase de despliegue.
 
 ## Próximas fases

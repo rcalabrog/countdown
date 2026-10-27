@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { photos, SLIDE_DURATION_MS, TRANSITION_DURATION_MS } from '../config/slideshow'
 import { findNextPhoto, waitForPaint, waitForVisibleDuration } from '../utils/slideshow'
+import { createPhotoSequence } from '../utils/photoSequence'
 import './BackgroundSlideshow.css'
 
 type Frame = { current: string | null; incoming: string | null; fading: boolean }
@@ -18,16 +19,17 @@ export function BackgroundSlideshow() {
     const controller = new AbortController()
     const { signal } = controller
     const failed = new Set<string>()
+    const sequence = createPhotoSequence(photos)
 
-    const findNext = (after: number) => findNextPhoto(photos, after, failed, signal)
+    const findNext = (current: string | null) => findNextPhoto(sequence, current, failed, signal)
 
     const run = async () => {
-      const initial = await findNext(-1)
+      const initial = await findNext(null)
       if (initial === null) return
-      let current: number = initial
+      let current = initial
       await waitForVisibleDuration(0, signal)
       signal.throwIfAborted()
-      setFrame({ current: photos[current], incoming: null, fading: false })
+      setFrame({ current, incoming: null, fading: false })
       if (photos.length === 1) return
 
       let holdDuration = SLIDE_DURATION_MS
@@ -41,8 +43,8 @@ export function BackgroundSlideshow() {
         await waitForVisibleDuration(0, signal)
         signal.throwIfAborted()
 
-        const currentUrl = photos[current]
-        const incomingUrl = photos[next]
+        const currentUrl = current
+        const incomingUrl = next
         setFrame({ current: currentUrl, incoming: incomingUrl, fading: false })
         await waitForPaint(signal)
         await waitForVisibleDuration(0, signal)
